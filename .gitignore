@@ -1,2 +1,3 @@
 toolkit.egg-info
 .vscode/
+**/__pycache__/
