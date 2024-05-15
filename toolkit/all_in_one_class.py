@@ -18,7 +18,8 @@ def run_subprocess_with_retry(cmd, env=None, max_retries=3, realtime_output=True
                 output = stdout.decode('utf-8').strip(), stderr.decode('utf-8').strip()
             else:
                 process = subprocess.Popen(cmd, env=env)
-                output = '', ''
+                output = process.communicate()
+                # output = '', ''
             last_try_output = output
         except Exception as e:
             return False, str(cmd), f'subprocess.Popen Error {e}'
@@ -41,16 +42,17 @@ def run_subprocess_with_retry(cmd, env=None, max_retries=3, realtime_output=True
     return False, *last_try_output
 
 class MultiGPUTaskScheduler:
-    def __init__(self, available_gpu_ids: List[int]) -> None:
+    def __init__(self, available_gpu_ids: List[int], realtime_subprocess_output=False) -> None:
         self.manager = Manager()
         self.task_queue = self.manager.Queue()
         self.progress_queue = self.manager.Queue()
+        self.realtime_subprocess_output = realtime_subprocess_output
 
         # Launch sub-processes and let them wait
         self.processes = []
         for gpu_id in available_gpu_ids:
             process = Process(target=MultiGPUTaskScheduler.gpu_proc_worker, args=(
-                gpu_id, self.task_queue, self.progress_queue))
+                gpu_id, self.task_queue, self.progress_queue, self.realtime_subprocess_output))
             self.processes.append(process)
             process.start()
         
@@ -112,7 +114,7 @@ class MultiGPUTaskScheduler:
         return execution_feed_back[['task_cmd', 'success_flag', 'process_stdout', 'process_stderr', 'task_env']]
 
     @classmethod
-    def gpu_proc_worker(cls, gpu_id: int, task_queue, progress_queue):
+    def gpu_proc_worker(cls, gpu_id: int, task_queue, progress_queue, realtime_subprocess_output: bool):
         for task_spec in iter(task_queue.get, None):  # Terminate when task is 'None'
             task_cmd, process_env, device_arg_option, setting_device_env = task_spec
             if device_arg_option is not None:
@@ -124,7 +126,7 @@ class MultiGPUTaskScheduler:
                 cmd=task_cmd,
                 env=process_env,
                 max_retries=3,
-                realtime_output=False
+                realtime_output=realtime_subprocess_output
             )
 
             progress_queue.put((
