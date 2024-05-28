@@ -111,7 +111,7 @@ class MultiGPUTaskScheduler:
         """
         execution_feed_back = pd.DataFrame(self.execution_feed_back)
         execution_feed_back.columns = ['task_cmd', 'task_env', 'success_flag', 'process_stdout', 'process_stderr']
-        return execution_feed_back[['task_cmd', 'success_flag', 'process_stdout', 'process_stderr', 'task_env']]
+        return execution_feed_back[['success_flag', 'task_cmd', 'process_stdout', 'process_stderr', 'task_env']]
 
     @classmethod
     def gpu_proc_worker(cls, gpu_id: int, task_queue, progress_queue, realtime_subprocess_output: bool):
