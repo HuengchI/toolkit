@@ -109,8 +109,7 @@ class MultiGPUTaskScheduler:
         Returns:
             pandas.DataFrame: the report in format of a pandas dataframe
         """
-        execution_feed_back = pd.DataFrame(self.execution_feed_back)
-        execution_feed_back.columns = ['task_cmd', 'task_env', 'success_flag', 'process_stdout', 'process_stderr']
+        execution_feed_back = pd.DataFrame(self.execution_feed_back, columns=['task_cmd', 'task_env', 'success_flag', 'process_stdout', 'process_stderr'])
         return execution_feed_back[['success_flag', 'task_cmd', 'process_stdout', 'process_stderr', 'task_env']]
 
     @classmethod
