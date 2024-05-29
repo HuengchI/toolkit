@@ -20,41 +20,42 @@ class MultiGPUTaskSchedulerReRunner:
         if self.verbose:
             print(*args, **kwargs)
 
-    def run(self):
+    def run(self, dry_run=False):
 
         self._ifprint(f'[In Progress] Availabel GPU IDs: {self.available_gpu_ids}')
         self._ifprint(f'[In Progress] Collected failed tasks: {len(self.failed_inputs)}')
 
-        # emit sampling tasks
-        for _,row in self.failed_inputs.iterrows():
-            cmd = eval(row['cmd'])
-            if self.device_arg_option:
-                cmd = cmd[:cmd.index(f"--{self.device_arg_option}")] # strip old device_arg_option if any
-            env = eval(row['env']) if 'env' in row else None
-            self.task_scheduler.emit_task(task_cmd=cmd, process_env=env, device_arg_option=None, setting_device_env=True)
+        if not dry_run:
+            # emit sampling tasks
+            for _,row in self.failed_inputs.iterrows():
+                cmd = eval(row['cmd'])
+                if self.device_arg_option:
+                    cmd = cmd[:cmd.index(f"--{self.device_arg_option}")] # strip old device_arg_option if any
+                env = eval(row['env']) if 'env' in row else None
+                self.task_scheduler.emit_task(task_cmd=cmd, process_env=env, device_arg_option=None, setting_device_env=True)
 
-        # Listen process execution progress
-        if '_rerun' in self.pipeline_execution_report_file:
-            serial = int(re.findall(r'_rerun(\d+)', self.pipeline_execution_report_file)[0])
-            serial += 1
-            report_file_path = re.sub(r'_rerun(\d+)', f"_rerun{serial}", self.pipeline_execution_report_file)
-        else:
-            name = self.pipeline_execution_report_file.split('.')
-            name.insert(1, '_rerun1.')
-            report_file_path = ''.join(name)
+            # Listen process execution progress
+            if '_rerun' in self.pipeline_execution_report_file:
+                serial = int(re.findall(r'_rerun(\d+)', self.pipeline_execution_report_file)[0])
+                serial += 1
+                report_file_path = re.sub(r'_rerun(\d+)', f"_rerun{serial}", self.pipeline_execution_report_file)
+            else:
+                name = self.pipeline_execution_report_file.split('.')
+                name.insert(1, '_rerun1.')
+                report_file_path = ''.join(name)
 
-        pbar = tqdm(total=self.task_scheduler.total_task_cnt, disable=not self.verbose)
-        for _ in range(self.task_scheduler.total_task_cnt):
-            self.task_scheduler.pull_process_message()
-            pbar.update()
-            self.task_scheduler.report_progress().to_csv(report_file_path, index=False) # Progressively execution report
-        pbar.close()
+            pbar = tqdm(total=self.task_scheduler.total_task_cnt, disable=not self.verbose)
+            for _ in range(self.task_scheduler.total_task_cnt):
+                self.task_scheduler.pull_process_message()
+                pbar.update()
+                self.task_scheduler.report_progress().to_csv(report_file_path, index=False) # Progressively execution report
+            pbar.close()
 
-        # No more tasks and inform to terminate
-        self.task_scheduler.notify_exit(wait_exiting=True)
+            # No more tasks and inform to terminate
+            self.task_scheduler.notify_exit(wait_exiting=True)
 
-        # Get final execution reports
-        self.task_scheduler.report_progress().to_csv(report_file_path, index=False)
+            # Get final execution reports
+            self.task_scheduler.report_progress().to_csv(report_file_path, index=False)
 
         self._ifprint(f'[Finished] Execution report saved to {report_file_path}')
 
