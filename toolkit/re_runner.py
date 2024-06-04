@@ -37,10 +37,10 @@ class MultiGPUTaskSchedulerReRunner:
         if not dry_run:
             # emit sampling tasks
             for _,row in self.failed_inputs.iterrows():
-                cmd = eval(row['cmd'])
+                cmd = eval(row['task_cmd'])
                 if self.device_arg_option:
                     cmd = cmd[:cmd.index(f"--{self.device_arg_option}")] # strip old device_arg_option if any
-                env = eval(row['env']) if 'env' in row else None
+                env = eval(row['task_env']) if 'task_env' in row else None
                 self.task_scheduler.emit_task(task_cmd=cmd, process_env=env, device_arg_option=None, setting_device_env=True)
 
             # Listen process execution progress
