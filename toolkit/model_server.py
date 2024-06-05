@@ -6,7 +6,6 @@ from multiprocessing import Process
 import torch
 from transformers import AutoConfig, AutoModelForCausalLM
 from transformers.dynamic_module_utils import get_class_from_dynamic_module
-from copy import deepcopy
 
 
 class Hook:
@@ -41,7 +40,7 @@ class Hook:
             model = conn.recv()
             process.current_process().authkey = original_auth_key
 
-        print(f"Shared model loaded from GPU:{model.real_gpu_id} within {time.time() - start_time:.2f}")
+        print(f"Shared model loaded from GPU:{model.real_gpu_id} within {time.time() - start_time:.2f}s")
         return model
 
 
@@ -116,13 +115,14 @@ class MultiGPUSharedModelServerLauncher:
     # running on new process
     def model_dispatcher(self, gpu_id, pretrained_model_name_or_path):
         os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_id)
+        model_name = os.path.abspath(pretrained_model_name_or_path).rsplit(os.sep, maxsplit=1)[-1]
+
+        assert model_name in ["Qwen-1_8B"]
 
         model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path,
                                                     trust_remote_code = True,
                                                     torch_dtype=torch.bfloat16).to('cuda')
 
-        model_name = os.path.abspath(pretrained_model_name_or_path).rsplit(os.sep, maxsplit=1)[-1]
- 
         model_server = SharedModelServer(model=model,
                                             identifying_name=model_name,
                                             real_gpu_id=gpu_id)

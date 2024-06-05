@@ -1,0 +1,59 @@
+#Q1:
+fd不能跨越进程共享
+
+## A1:
+分析python multiprocessing的源码，采用socket+pickle的方式传输model。注意需要先传输并设置authkey后，Connection.recv()才能正确工作。
+
+#Q2:
+unpickle model时报错，'transformer_modules' not Found.
+
+## A1:
+分析AutoModel.from_pretrained源码发现需要先动态导入对应大模型的class（比如QWenLM）
+
+# Q3:
+不能多batch，会出错：‘output prob has -1’
+
+## A1：
+发现不加载loar的话，不会出错，应该是peft的问题。
+    解决方案1：对比两个lora的参数看看。
+    解决方案2：跟踪peft的代码
+
+## A2：
+对比两个peft_model.pkl文件后发现二者的sha256sum完全不同。
+对比参数看看
+def compare_models(model1, model2):
+    # 检查模型结构是否一样
+    if model1.state_dict().keys() != model2.state_dict().keys():
+        print("模型结构不同")
+        return
+
+    # 检查参数值是否一样
+    diff_count = 0
+    for key in model1.state_dict().keys():
+        if not torch.equal(model1.state_dict()[key], model2.state_dict()[key]):
+            print(f"参数 {key} 不同")
+            diff_count += 1
+
+    if diff_count == 0:
+        print("两个模型参数完全相同")
+    else:
+        print(f"共有 {diff_count} 个不同的参数")
+
+compare_models(read_pickle_file('peft_server.pkl'), read_pickle_file('peft_file.pkl'))
+
+## A3:
+对比两个peft_model.pkl的参数发现完全相同。
+
+## A4:
+使用coverage.py进行code trace，没有发现区别
+
+## A5:
+创建名为/huengchi的软连接，使得vscode debugger正常工作。发现model outputs中大量的inf和nan。
+尝试将lora merge之后再次推理，前两个batch正常，第三个batch时outputs中再次出现大量nan。
+
+#结论：
+这是一个torch.share_memory或者transformers.generate()的bug。与我无关，我也无力解决。
+
+真正的解决方案：购买nv-link提升CPU到GPU的通信速度。
+
+model server方案宣布彻底失败。

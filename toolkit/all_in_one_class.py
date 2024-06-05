@@ -6,7 +6,7 @@ from multiprocessing import Manager, Process
 import pandas as pd
 
 
-def run_subprocess_with_retry(cmd, env=None, max_retries=3, realtime_output=True):
+def run_subprocess_with_retry(cmd, env=None, max_retries=3, realtime_output=True, delay_time_base = 2):
     retry = 0
 
     last_try_output = None
@@ -34,7 +34,7 @@ def run_subprocess_with_retry(cmd, env=None, max_retries=3, realtime_output=True
                 f"Process failed, retrying... (retry {retry+1}/{max_retries})")
             process.terminate()
             retry += 1
-            delay = 2**retry  # exponential backoff
+            delay = delay_time_base**retry  # exponential backoff
             print(f"Waiting for {delay} seconds before retrying...")
             time.sleep(delay)
     print(f"[All Failed] Exceeded maximum retries. Exiting.")
