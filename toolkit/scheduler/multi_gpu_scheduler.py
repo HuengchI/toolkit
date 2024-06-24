@@ -2,7 +2,7 @@ import os
 from typing import List, Tuple, Union
 from multiprocessing import Manager, Process
 import pandas as pd
-from .subproc.run_w_retry import run_subprocess_with_retry
+from ..subproc.run_w_retry import run_subprocess_with_retry
 
 
 class MultiGPUTaskScheduler:
