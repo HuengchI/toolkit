@@ -1,7 +1,7 @@
 import re
 from tqdm import tqdm
 import pandas as pd
-from .all_in_one_class import MultiGPUTaskScheduler
+from .multi_gpu_scheduler import MultiGPUTaskScheduler
 
 
 class MultiGPUTaskSchedulerReRunner:

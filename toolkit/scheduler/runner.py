@@ -1,6 +1,6 @@
 from typing import List, Dict
 from tqdm import tqdm
-from .all_in_one_class import MultiGPUTaskScheduler
+from .multi_gpu_scheduler import MultiGPUTaskScheduler
 
 
 class MultiGPUTaskSchedulerRunner:
