@@ -1,7 +1,7 @@
 import subprocess
 import time
 
-def run_subprocess_with_retry(cmd, env=None, max_retries=3, realtime_output=True, delay_time_base = 2):
+def run_subprocess_with_retry(cmd, env=None, max_retries=3, realtime_output=False, delay_time_base = 2):
     retry = 0
 
     last_try_output = None
