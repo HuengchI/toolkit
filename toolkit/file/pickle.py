@@ -17,3 +17,4 @@ def write_pickle_file(data, file_path):
         print("Data has been successfully written to", file_path)
     except Exception as e:
         raise Exception("An error occurred: ", e)
+    return file_path
